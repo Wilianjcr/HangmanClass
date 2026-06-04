@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo da Forca Educativo - Com Níveis</title>
+    <!-- Tailwind CSS para design responsivo e moderno -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome para ícones expressivos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Quicksand', sans-serif;
+        }
+        .title-font {
+            font-family: 'Fredoka One', cursive;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 flex flex-col justify-between">
+
+    <!-- Cabeçalho Principal -->
+    <header class="bg-indigo-600 text-white shadow-lg py-4 px-6 sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <h1 class="title-font text-3xl tracking-wide flex items-center gap-3">
+                <i class="fa-solid fa-graduation-cap text-yellow-300 animate-bounce"></i>
+                Hangman Class <span class="text-indigo-200 text-xl font-sans font-bold">Multinível</span>
+            </h1>
+            <nav class="flex gap-2">
+                <button id="btn-play-tab" onclick="switchTab('game')" class="px-5 py-2 rounded-full font-bold bg-white text-indigo-600 shadow transition-all duration-200 hover:bg-indigo-100 flex items-center gap-2">
+                    <i class="fa-solid fa-play"></i> Jogar
+                </button>
+                <button id="btn-admin-tab" onclick="switchTab('admin')" class="px-5 py-2 rounded-full font-bold bg-indigo-700 text-white hover:bg-indigo-800 transition-all duration-200 flex items-center gap-2">
+                    <i class="fa-solid fa-gears"></i> Painel do Professor
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main class="max-w-5xl w-full mx-auto p-4 sm:p-6 flex-grow">
+        
+        <!-- ================= TELA DE JOGO ================= -->
+        <section id="tab-game" class="space-y-6">
+            
+            <!-- Seleção de Dificuldade de Jogo e Estatísticas -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                <!-- Seletor de Nível (Esquerda) -->
+                <div class="md:col-span-6 bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between gap-2">
+                    <span class="text-sm font-bold text-slate-500 uppercase px-2"><i class="fa-solid fa-sliders"></i> Nível do Jogo:</span>
+                    <div class="flex bg-slate-100 p-1 rounded-xl w-fit">
+                        <button id="level-play-iniciante" onclick="setPlayLevel('iniciante')" class="px-4 py-1.5 rounded-lg font-bold text-sm transition-all duration-200 bg-emerald-500 text-white shadow-sm">
+                            Iniciante
+                        </button>
+                        <button id="level-play-avancado" onclick="setPlayLevel('avancado')" class="px-4 py-1.5 rounded-lg font-bold text-sm transition-all duration-200 text-slate-600 hover:text-slate-800">
+                            Avançado
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Estatísticas de Placar (Direita) -->
+                <div class="md:col-span-6 grid grid-cols-2 gap-4">
+                    <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-400 font-bold uppercase">Vitórias</p>
+                            <h3 id="stats-wins" class="text-xl font-bold text-emerald-600">0</h3>
+                        </div>
+                        <div class="bg-emerald-50 p-2 rounded-lg text-emerald-500">
+                            <i class="fa-solid fa-trophy text-lg"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-400 font-bold uppercase">Derrotas</p>
+                            <h3 id="stats-losses" class="text-xl font-bold text-rose-600">0</h3>
+                        </div>
+                        <div class="bg-rose-50 p-2 rounded-lg text-rose-500">
+                            <i class="fa-solid fa-skull text-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Área de Jogo Ativa -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                
+                <!-- Desenho da Forca (Esquerda) -->
+                <div class="lg:col-span-5 bg-white p-6 rounded-3xl shadow-md border border-slate-100 flex flex-col items-center justify-center min-h-[350px]">
+                    <h3 class="text-lg font-bold text-slate-600 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-nodes text-indigo-500"></i> Estado da Forca
+                    </h3>
+                    
+                    <!-- SVG do Boneco -->
+                    <svg id="hangman-svg" width="200" height="230" class="drop-shadow-md">
+                        <!-- Estrutura da Forca -->
+                        <line x1="20" y1="210" x2="120" y2="210" stroke="#475569" stroke-width="8" stroke-linecap="round" />
+                        <line x1="60" y1="210" x2="60" y2="20" stroke="#475569" stroke-width="8" stroke-linecap="round" />
+                        <line x1="60" y1="20" x2="140" y2="20" stroke="#475569" stroke-width="8" stroke-linecap="round" />
+                        <line x1="140" y1="20" x2="140" y2="50" stroke="#475569" stroke-width="4" stroke-linecap="round" />
+                        <line x1="60" y1="60" x2="100" y2="20" stroke="#475569" stroke-width="6" stroke-linecap="round" />
+
+                        <!-- Boneco Dinâmico -->
+                        <!-- 1. Cabeça -->
+                        <circle id="part-head" cx="140" cy="70" r="18" stroke="#1e293b" stroke-width="4" fill="none" class="hidden" />
+                        <!-- 2. Corpo -->
+                        <line id="part-body" x1="140" y1="88" x2="140" y2="140" stroke="#1e293b" stroke-width="4" stroke-linecap="round" class="hidden" />
+                        <!-- 3. Braço Esquerdo -->
+                        <line id="part-arm-l" x1="140" y1="105" x2="110" y2="120" stroke="#1e293b" stroke-width="4" stroke-linecap="round" class="hidden" />
+                        <!-- 4. Braço Direito -->
+                        <line id="part-arm-r" x1="140" y1="105" x2="170" y2="120" stroke="#1e293b" stroke-width="4" stroke-linecap="round" class="hidden" />
+                        <!-- 5. Perna Esquerda -->
+                        <line id="part-leg-l" x1="140" y1="140" x2="115" y2="185" stroke="#1e293b" stroke-width="4" stroke-linecap="round" class="hidden" />
+                        <!-- 6. Perna Direita -->
+                        <line id="part-leg-r" x1="140" y1="140" x2="165" y2="185" stroke="#1e293b" stroke-width="4" stroke-linecap="round" class="hidden" />
+                    </svg>
+
+                    <p id="remaining-attempts" class="mt-4 text-sm font-semibold text-slate-500">
+                        Tentativas restantes: <span id="attempts-count" class="text-indigo-600 font-bold text-lg">6</span>
+                    </p>
+                </div>
+
+                <!-- Painel da Palavra / Teclado (Direita) -->
+                <div class="lg:col-span-7 space-y-6">
+                    
+                    <!-- Dica e palavra -->
+                    <div class="bg-white p-6 rounded-3xl shadow-md border border-slate-100 flex flex-col justify-between min-h-[180px]">
+                        <div class="flex justify-between items-start gap-4">
+                            <div>
+                                <span class="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Dica / Tradução</span>
+                                <p id="game-hint" class="text-slate-600 mt-2 text-lg italic font-semibold">Carregando...</p>
+                            </div>
+                            <span id="game-level-badge" class="px-3 py-1 rounded-full text-xs font-bold"></span>
+                        </div>
+                        
+                        <!-- Layout da palavra/frase -->
+                        <div id="word-container" class="mt-6 flex flex-wrap gap-3 items-center justify-center">
+                            <!-- Letras geradas via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Teclado Virtual -->
+                    <div class="bg-white p-6 rounded-3xl shadow-md border border-slate-100">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Escolha uma Letra</h4>
+                            <button onclick="skipWord()" class="text-indigo-600 hover:text-indigo-800 text-sm font-bold flex items-center gap-1 transition-colors">
+                                <i class="fa-solid fa-forward"></i> Pular Palavra
+                            </button>
+                        </div>
+                        
+                        <div id="keyboard" class="grid grid-cols-7 sm:grid-cols-9 gap-2">
+                            <!-- Botões do alfabeto via JS -->
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= PAINEL DO PROFESSOR (CADASTRO) ================= -->
+        <section id="tab-admin" class="hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Formulário de Cadastro (Esquerda) -->
+                <div class="lg:col-span-5 bg-white p-6 rounded-3xl shadow-md border border-slate-100">
+                    <h2 class="title-font text-2xl text-slate-700 mb-6 flex items-center gap-2">
+                        <i class="fa-solid fa-plus-circle text-indigo-600"></i> Novo Cadastro
+                    </h2>
+                    
+                    <form id="add-word-form" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-600 mb-1">Palavra ou Frase (em Inglês):</label>
+                            <input type="text" id="input-word" placeholder="Ex: Good morning ou House" required autocomplete="off"
+                                   class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none transition-colors font-semibold">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-slate-600 mb-1">Dica de Tradução ou Tema (Português):</label>
+                            <input type="text" id="input-hint" placeholder="Ex: Fruto vermelho ou Saudação matinal" required autocomplete="off"
+                                   class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none transition-colors font-semibold">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-slate-600 mb-1">Nível de Direcionamento:</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <label class="flex items-center justify-center gap-2 p-3 border-2 border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-all text-center">
+                                    <input type="radio" name="level-select" value="iniciante" checked class="w-4 h-4 text-emerald-600 focus:ring-emerald-500">
+                                    <span class="text-sm font-bold text-slate-700">Iniciante</span>
+                                </label>
+                                <label class="flex items-center justify-center gap-2 p-3 border-2 border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-all text-center">
+                                    <input type="radio" name="level-select" value="avancado" class="w-4 h-4 text-purple-600 focus:ring-purple-500">
+                                    <span class="text-sm font-bold text-slate-700">Avançado</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition-all shadow hover:shadow-lg flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-floppy-disk"></i> Salvar na Base de Dados
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Lista de Registros Existentes (Direita) -->
+                <div class="lg:col-span-7 bg-white p-6 rounded-3xl shadow-md border border-slate-100 flex flex-col h-[520px]">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
+                        <div>
+                            <h2 class="title-font text-2xl text-slate-700 flex items-center gap-2">
+                                <i class="fa-solid fa-list-check text-indigo-600"></i> Banco de Palavras (<span id="admin-word-count">0</span>)
+                            </h2>
+                            <p class="text-xs text-slate-500">As palavras permanecem guardadas mesmo se fechar o navegador.</p>
+                        </div>
+                        <button onclick="clearDatabase()" class="px-3 py-1.5 bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 text-xs font-bold rounded-lg transition-colors flex items-center gap-1">
+                            <i class="fa-solid fa-trash-can"></i> Limpar Tudo
+                        </button>
+                    </div>
+
+                    <!-- Listagem -->
+                    <div class="flex-grow overflow-y-auto pr-2 space-y-2" id="words-list-container">
+                        <!-- Conteúdo gerado via JS -->
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="bg-slate-800 text-slate-400 py-6 px-6 mt-12 text-center text-sm border-t border-slate-700">
+        <div class="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p>&copy; 2026 Jogo da Forca Educativo Multinível - Recursos do Professor.</p>
+            <p class="flex items-center gap-1"><i class="fa-solid fa-database text-emerald-500"></i> Banco de Dados Local do Navegador Ativo</p>
+        </div>
+    </footer>
+
+    <!-- Modal de Feedback (Diálogos sem alert nativo) -->
+    <div id="feedback-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center transform scale-95 transition-transform duration-300" id="modal-content">
+            <div id="modal-icon-container" class="w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-4">
+                <!-- Ícone via JS -->
+            </div>
+            <h3 id="modal-title" class="title-font text-2xl mb-2">Feedback</h3>
+            <p id="modal-text" class="text-slate-600 text-sm mb-6">Mensagem informativa para o usuário.</p>
+            
+            <div id="modal-reveal-section" class="mb-6 p-3 bg-slate-50 rounded-xl border border-dashed border-slate-200 hidden">
+                <p class="text-xs text-slate-400 font-bold uppercase">A resposta correta era</p>
+                <p id="modal-correct-word" class="text-lg font-bold text-slate-800 uppercase tracking-widest mt-1"></p>
+            </div>
+
+            <div class="flex gap-3">
+                <button id="modal-confirm-btn" onclick="closeModalAndNext()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow transition-colors flex items-center justify-center gap-2">
+                    Continuar <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script de Funcionamento Geral -->
+    <script>
+        // --- BASE DE DADOS PADRÃO (Iniciado caso o navegador não possua dados gravados) ---
+        const DEFAULT_WORDS = [
+            // Nível Iniciante
+            { text: "WELCOME TO CLASS", hint: "Boas-vindas ao ano letivo", level: "iniciante" },
+            { text: "TEACHER", hint: "Quem ensina na sala de aula", level: "iniciante" },
+            { text: "SCHOOLBAG", hint: "Mochila para carregar material", level: "iniciante" },
+            { text: "PENCIL CASE", hint: "Estojo escolar", level: "iniciante" },
+            { text: "BLUE", hint: "A cor do céu limpo", level: "iniciante" },
+            { text: "CAT", hint: "Animal doméstico que mia", level: "iniciante" },
+            
+            // Nível Avançado
+            { text: "PIECE OF CAKE", hint: "Expressão para dizer que algo é 'mamão com açúcar' (fácil)", level: "avancado" },
+            { text: "BREAK A LEG", hint: "Expressão idiomática usada para desejar boa sorte", level: "avancado" },
+            { text: "UNDER THE WEATHER", hint: "Dizer que está se sentindo indisposto ou doentio", level: "avancado" },
+            { text: "AN APPLE A DAY KEEPS THE DOCTOR AWAY", hint: "Ditado popular inglês sobre saúde saudável", level: "avancado" },
+            { text: "BLACKBOARD", hint: "Antigo quadro de giz para escrita escolar", level: "avancado" }
+        ];
+
+        // --- ESTADO GLOBAL DA APLICAÇÃO ---
+        let wordsDatabase = [];
+        let scoreStats = { wins: 0, losses: 0 };
+        
+        let currentWordObj = null;
+        let guessedLetters = [];
+        let remainingAttempts = 6;
+        const maxAttempts = 6;
+        
+        // Nível atual ativo na tela de jogo
+        let currentPlayLevel = "iniciante"; 
+
+        // Elementos do boneco (SVG)
+        const HANGMAN_PARTS = [
+            'part-head',
+            'part-body',
+            'part-arm-l',
+            'part-arm-r',
+            'part-leg-l',
+            'part-leg-r'
+        ];
+
+        // --- INICIALIZAÇÃO ---
+        window.addEventListener('DOMContentLoaded', () => {
+            initDatabase();
+            initStats();
+            setupNewGame();
+        });
+
+        // Banco de Dados Local
+        function initDatabase() {
+            const savedWords = localStorage.getItem('hangman_words');
+            if (savedWords) {
+                wordsDatabase = JSON.parse(savedWords);
+            } else {
+                wordsDatabase = [...DEFAULT_WORDS];
+                saveWordsToStorage();
+            }
+            updateAdminList();
+        }
+
+        // Estatísticas do Jogador
+        function initStats() {
+            const savedStats = localStorage.getItem('hangman_stats');
+            if (savedStats) {
+                scoreStats = JSON.parse(savedStats);
+            } else {
+                scoreStats = { wins: 0, losses: 0 };
+                saveStatsToStorage();
+            }
+            renderStats();
+        }
+
+        function saveWordsToStorage() {
+            localStorage.setItem('hangman_words', JSON.stringify(wordsDatabase));
+        }
+
+        function saveStatsToStorage() {
+            localStorage.setItem('hangman_stats', JSON.stringify(scoreStats));
+        }
+
+        function renderStats() {
+            document.getElementById('stats-wins').innerText = scoreStats.wins;
+            document.getElementById('stats-losses').innerText = scoreStats.losses;
+        }
+
+        // --- NAVEGAÇÃO DE PÁGINAS ---
+        function switchTab(tabName) {
+            const tabGame = document.getElementById('tab-game');
+            const tabAdmin = document.getElementById('tab-admin');
+            const btnPlay = document.getElementById('btn-play-tab');
+            const btnAdmin = document.getElementById('btn-admin-tab');
+
+            if (tabName === 'game') {
+                tabGame.classList.remove('hidden');
+                tabAdmin.classList.add('hidden');
+                btnPlay.className = "px-5 py-2 rounded-full font-bold bg-white text-indigo-600 shadow transition-all duration-200 hover:bg-indigo-100 flex items-center gap-2";
+                btnAdmin.className = "px-5 py-2 rounded-full font-bold bg-indigo-700 text-white hover:bg-indigo-800 transition-all duration-200 flex items-center gap-2";
+                
+                // Força recarregamento caso o banco de palavras tenha sofrido modificações
+                setupNewGame();
+            } else {
+                tabGame.classList.add('hidden');
+                tabAdmin.classList.remove('hidden');
+                btnPlay.className = "px-5 py-2 rounded-full font-bold bg-indigo-700 text-white hover:bg-indigo-800 transition-all duration-200 flex items-center gap-2";
+                btnAdmin.className = "px-5 py-2 rounded-full font-bold bg-white text-indigo-600 shadow transition-all duration-200 hover:bg-indigo-100 flex items-center gap-2";
+                updateAdminList();
+            }
+        }
+
+        // Configuração de nível ativo na tela do aluno
+        function setPlayLevel(level) {
+            currentPlayLevel = level;
+            const btnIniciante = document.getElementById('level-play-iniciante');
+            const btnAvancado = document.getElementById('level-play-avancado');
+
+            if (level === 'iniciante') {
+                btnIniciante.className = "px-4 py-1.5 rounded-lg font-bold text-sm transition-all duration-200 bg-emerald-500 text-white shadow-sm";
+                btnAvancado.className = "px-4 py-1.5 rounded-lg font-bold text-sm transition-all duration-200 text-slate-600 hover:text-slate-800";
+            } else {
+                btnIniciante.className = "px-4 py-1.5 rounded-lg font-bold text-sm transition-all duration-200 text-slate-600 hover:text-slate-800";
+                btnAvancado.className = "px-4 py-1.5 rounded-lg font-bold text-sm transition-all duration-200 bg-purple-600 text-white shadow-sm";
+            }
+
+            setupNewGame();
+        }
+
+        // --- SISTEMA E FLUXO DO JOGO ---
+        function setupNewGame() {
+            resetHangmanVisuals();
+            guessedLetters = [];
+            remainingAttempts = maxAttempts;
+            document.getElementById('attempts-count').innerText = remainingAttempts;
+
+            // Filtra as palavras cadastradas com base no nível selecionado
+            const filteredWords = wordsDatabase.filter(w => (w.level || 'iniciante') === currentPlayLevel);
+
+            if (filteredWords.length === 0) {
+                currentWordObj = null;
+                document.getElementById('game-hint').innerHTML = `<span class="text-rose-500 font-bold"><i class="fa-solid fa-triangle-exclamation"></i> Sem palavras para este nível!</span>`;
+                
+                const badge = document.getElementById('game-level-badge');
+                badge.innerText = currentPlayLevel === 'iniciante' ? 'Iniciante' : 'Avançado';
+                badge.className = currentPlayLevel === 'iniciante' 
+                    ? 'px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800' 
+                    : 'px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800';
+
+                document.getElementById('word-container').innerHTML = `
+                    <div class="text-center p-4">
+                        <p class="text-sm text-slate-500">O professor precisa cadastrar palavras para o nível <span class="font-bold capitalize">${currentPlayLevel}</span>.</p>
+                    </div>
+                `;
+                document.getElementById('keyboard').innerHTML = '';
+                return;
+            }
+
+            // Seleciona palavra aleatória dentro do nível filtrado
+            const randomIndex = Math.floor(Math.random() * filteredWords.length);
+            currentWordObj = filteredWords[randomIndex];
+
+            // Renderizar a dica
+            document.getElementById('game-hint').innerText = currentWordObj.hint;
+
+            // Atualiza o crachá/badge de nível do jogo
+            const badge = document.getElementById('game-level-badge');
+            badge.innerText = currentPlayLevel === 'iniciante' ? 'Iniciante' : 'Avançado';
+            badge.className = currentPlayLevel === 'iniciante' 
+                ? 'px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800' 
+                : 'px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800';
+
+            // Renderizar slots da palavra
+            renderWordRepresentation();
+
+            // Renderizar teclado
+            renderKeyboard();
+        }
+
+        // Cria caixas individuais de palavra (com suporte para quebra de frase inteligente por palavra)
+        function renderWordRepresentation() {
+            const container = document.getElementById('word-container');
+            container.innerHTML = '';
+
+            const phrase = currentWordObj.text.toUpperCase();
+            const wordsList = phrase.split(' ');
+
+            wordsList.forEach((word) => {
+                // Caixa/bloco contenedor flexível para as letras de cada palavra individual
+                const wordBlock = document.createElement('div');
+                wordBlock.className = "flex gap-1.5 px-2 py-2 border border-slate-100 rounded-xl bg-slate-50/60 shadow-sm";
+
+                for (let i = 0; i < word.length; i++) {
+                    const letter = word[i];
+                    const letterDiv = document.createElement('div');
+                    const isLetter = /[A-Z]/.test(letter);
+
+                    if (isLetter) {
+                        letterDiv.className = "w-8 h-10 border-b-4 border-indigo-500 flex items-center justify-center text-xl font-black text-slate-800 transition-all";
+                        if (guessedLetters.includes(letter)) {
+                            letterDiv.innerText = letter;
+                            letterDiv.classList.add('bg-indigo-50', 'border-indigo-600', 'text-indigo-700');
+                        } else {
+                            letterDiv.innerText = '';
+                        }
+                    } else {
+                        // Símbolos especiais (ex: hífens ou apóstrofos) mostram diretamente
+                        letterDiv.className = "w-6 h-10 flex items-end justify-center text-xl font-bold text-slate-500 pb-1";
+                        letterDiv.innerText = letter;
+                    }
+                    wordBlock.appendChild(letterDiv);
+                }
+                container.appendChild(wordBlock);
+            });
+        }
+
+        // Desenha o teclado de letras na tela
+        function renderKeyboard() {
+            const keyboardContainer = document.getElementById('keyboard');
+            keyboardContainer.innerHTML = '';
+
+            const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
+
+            alphabet.forEach(letter => {
+                const button = document.createElement('button');
+                button.innerText = letter;
+                button.className = "bg-slate-100 hover:bg-indigo-500 hover:text-white font-bold py-2 px-1 rounded-xl shadow-sm transition-all duration-150 text-base border border-slate-200 flex items-center justify-center focus:outline-none";
+                
+                if (guessedLetters.includes(letter)) {
+                    button.disabled = true;
+                    button.className = "bg-slate-200 text-slate-400 font-bold py-2 px-1 rounded-xl border border-slate-300 cursor-not-allowed flex items-center justify-center";
+                }
+
+                button.onclick = () => handleLetterGuess(letter, button);
+                keyboardContainer.appendChild(button);
+            });
+        }
+
+        // Lógica de adivinhação da letra
+        function handleLetterGuess(letter, buttonElement) {
+            if (guessedLetters.includes(letter) || remainingAttempts <= 0 || !currentWordObj) return;
+
+            guessedLetters.push(letter);
+            buttonElement.disabled = true;
+
+            const isCorrect = currentWordObj.text.toUpperCase().includes(letter);
+
+            if (isCorrect) {
+                buttonElement.className = "bg-emerald-500 text-white font-bold py-2 px-1 rounded-xl shadow-sm cursor-not-allowed flex items-center justify-center";
+                renderWordRepresentation();
+                checkGameStatus();
+            } else {
+                buttonElement.className = "bg-rose-500 text-white font-bold py-2 px-1 rounded-xl shadow-sm cursor-not-allowed flex items-center justify-center animate-pulse";
+                remainingAttempts--;
+                document.getElementById('attempts-count').innerText = remainingAttempts;
+                revealHangmanPart(maxAttempts - remainingAttempts);
+                checkGameStatus();
+            }
+        }
+
+        function revealHangmanPart(index) {
+            if (index > 0 && index <= HANGMAN_PARTS.length) {
+                const partId = HANGMAN_PARTS[index - 1];
+                const element = document.getElementById(partId);
+                if (element) {
+                    element.classList.remove('hidden');
+                }
+            }
+        }
+
+        function resetHangmanVisuals() {
+            HANGMAN_PARTS.forEach(partId => {
+                const element = document.getElementById(partId);
+                if (element) {
+                    element.classList.add('hidden');
+                }
+            });
+        }
+
+        function checkGameStatus() {
+            if (!currentWordObj) return;
+
+            const phrase = currentWordObj.text.toUpperCase();
+            const onlyLetters = phrase.replace(/[^A-Z]/g, '');
+            const isWon = [...onlyLetters].every(letter => guessedLetters.includes(letter));
+
+            if (isWon) {
+                scoreStats.wins++;
+                saveStatsToStorage();
+                renderStats();
+                showFeedbackModal(true);
+            } else if (remainingAttempts <= 0) {
+                scoreStats.losses++;
+                saveStatsToStorage();
+                renderStats();
+                showFeedbackModal(false);
+            }
+        }
+
+        function skipWord() {
+            setupNewGame();
+        }
+
+        // --- EXIBIÇÃO DE MODAL DE FEEDBACK (Sem alert) ---
+        function showFeedbackModal(isVictory) {
+            const modal = document.getElementById('feedback-modal');
+            const content = document.getElementById('modal-content');
+            const iconContainer = document.getElementById('modal-icon-container');
+            const title = document.getElementById('modal-title');
+            const text = document.getElementById('modal-text');
+            const revealSection = document.getElementById('modal-reveal-section');
+            const confirmBtn = document.getElementById('modal-confirm-btn');
+
+            // Restaura o clique padrão de fechar/próximo
+            confirmBtn.onclick = closeModalAndNext;
+            confirmBtn.innerHTML = `Continuar <i class="fa-solid fa-arrow-right"></i>`;
+            confirmBtn.className = "flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow transition-colors flex items-center justify-center gap-2";
+
+            if (isVictory) {
+                iconContainer.className = "w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-4 bg-emerald-100 text-emerald-600 animate-bounce";
+                iconContainer.innerHTML = '<i class="fa-solid fa-trophy"></i>';
+                title.innerText = "Excelente trabalho!";
+                title.className = "title-font text-2xl mb-2 text-emerald-600";
+                text.innerText = "Você adivinhou a palavra com sucesso!";
+                revealSection.classList.add('hidden');
+            } else {
+                iconContainer.className = "w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-4 bg-rose-100 text-rose-600";
+                iconContainer.innerHTML = '<i class="fa-solid fa-skull-crossbones"></i>';
+                title.innerText = "Fim de Jogo!";
+                title.className = "title-font text-2xl mb-2 text-rose-600";
+                text.innerText = "Não foi dessa vez, tente outra palavra.";
+                
+                document.getElementById('modal-correct-word').innerText = currentWordObj.text;
+                revealSection.classList.remove('hidden');
+            }
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+                content.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeModalAndNext() {
+            const modal = document.getElementById('feedback-modal');
+            const content = document.getElementById('modal-content');
+
+            modal.classList.add('opacity-0');
+            content.classList.remove('scale-100');
+            content.classList.add('scale-95');
+
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                setupNewGame();
+            }, 300);
+        }
+
+        // --- PAINEL ADMINISTRATIVO (SALVAR / DELETAR) ---
+        function handleFormSubmit(event) {
+            event.preventDefault();
+
+            const wordInput = document.getElementById('input-word');
+            const hintInput = document.getElementById('input-hint');
+            const levelSelected = document.querySelector('input[name="level-select"]:checked').value;
+
+            const textVal = wordInput.value.trim().toUpperCase();
+            const hintVal = hintInput.value.trim();
+
+            if (!textVal || !hintVal) return;
+
+            // Evita palavras duplicadas exatas
+            const exists = wordsDatabase.some(item => item.text.toUpperCase() === textVal);
+            if (exists) {
+                // Notificação de erro em modal personalizado
+                const modal = document.getElementById('feedback-modal');
+                const content = document.getElementById('modal-content');
+                const iconContainer = document.getElementById('modal-icon-container');
+                const title = document.getElementById('modal-title');
+                const text = document.getElementById('modal-text');
+                const revealSection = document.getElementById('modal-reveal-section');
+
+                iconContainer.className = "w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-4 bg-amber-100 text-amber-600";
+                iconContainer.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+                title.innerText = "Registro Duplicado";
+                title.className = "title-font text-2xl mb-2 text-amber-600";
+                text.innerText = `A palavra ou frase "${textVal}" já existe em nossa base de dados.`;
+                revealSection.classList.add('hidden');
+
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    content.classList.remove('scale-95');
+                    content.classList.add('scale-100');
+                }, 10);
+                return;
+            }
+
+            // Adiciona no Banco de Dados local
+            wordsDatabase.push({
+                text: textVal,
+                hint: hintVal,
+                level: levelSelected
+            });
+
+            saveWordsToStorage();
+            updateAdminList();
+
+            wordInput.value = '';
+            hintInput.value = '';
+
+            // Notificação visual de sucesso no botão do formulário
+            const submitBtn = event.submitter;
+            const originalHTML = submitBtn.innerHTML;
+            submitBtn.innerHTML = `<i class="fa-solid fa-check-double"></i> Cadastrado com Sucesso!`;
+            submitBtn.className = "w-full bg-emerald-600 text-white font-bold py-3 px-4 rounded-xl transition-all shadow flex items-center justify-center gap-2";
+            
+            setTimeout(() => {
+                submitBtn.innerHTML = originalHTML;
+                submitBtn.className = "w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition-all shadow hover:shadow-lg flex items-center justify-center gap-2";
+            }, 1500);
+        }
+
+        // Renderização do gerenciamento das palavras cadastradas
+        function updateAdminList() {
+            const container = document.getElementById('words-list-container');
+            container.innerHTML = '';
+            
+            document.getElementById('admin-word-count').innerText = wordsDatabase.length;
+
+            if (wordsDatabase.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-16 text-slate-400">
+                        <i class="fa-solid fa-box-open text-5xl mb-3"></i>
+                        <p class="text-lg font-semibold">O banco de palavras está vazio!</p>
+                        <p class="text-sm">Cadastre novos termos ao lado escolhendo os níveis correspondentes.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Exibe de trás para frente para focar nas adições recentes
+            const listToRender = [...wordsDatabase].reverse();
+
+            listToRender.forEach((item) => {
+                const originalIndex = wordsDatabase.findIndex(w => w.text === item.text);
+                const levelVal = item.level || 'iniciante';
+                
+                const levelBadge = levelVal === 'iniciante' 
+                    ? `<span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-0.5 rounded-full font-bold uppercase">Iniciante</span>`
+                    : `<span class="bg-purple-100 text-purple-800 text-xs px-2.5 py-0.5 rounded-full font-bold uppercase">Avançado</span>`;
+
+                const itemDiv = document.createElement('div');
+                itemDiv.className = "flex justify-between items-center bg-slate-50 hover:bg-slate-100 p-3 rounded-2xl border border-slate-100 transition-colors gap-3";
+                
+                itemDiv.innerHTML = `
+                    <div class="flex-grow min-w-0">
+                        <div class="flex items-center gap-2 mb-1">
+                            <p class="text-sm font-bold text-slate-800 uppercase tracking-wide truncate">${item.text}</p>
+                            ${levelBadge}
+                        </div>
+                        <p class="text-xs text-slate-500 italic truncate"><strong class="not-italic text-indigo-600">Dica:</strong> ${item.hint}</p>
+                    </div>
+                    <button onclick="deleteWord(${originalIndex})" class="p-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-colors flex-shrink-0" title="Apagar Palavra">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                `;
+                container.appendChild(itemDiv);
+            });
+        }
+
+        // Deletar termo individual
+        function deleteWord(index) {
+            if (index < 0 || index >= wordsDatabase.length) return;
+            
+            wordsDatabase.splice(index, 1);
+            saveWordsToStorage();
+            updateAdminList();
+            setupNewGame();
+        }
+
+        // Deletar banco de dados inteiro do professor
+        function clearDatabase() {
+            const modal = document.getElementById('feedback-modal');
+            const content = document.getElementById('modal-content');
+            const iconContainer = document.getElementById('modal-icon-container');
+            const title = document.getElementById('modal-title');
+            const text = document.getElementById('modal-text');
+            const revealSection = document.getElementById('modal-reveal-section');
+            const confirmBtn = document.getElementById('modal-confirm-btn');
+
+            iconContainer.className = "w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-4 bg-rose-100 text-rose-600";
+            iconContainer.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+            title.innerText = "Deseja limpar tudo?";
+            title.className = "title-font text-2xl mb-2 text-rose-600";
+            text.innerHTML = `Você tem certeza que quer excluir todas as <span class="font-bold">${wordsDatabase.length}</span> palavras cadastradas do seu navegador? Isso deixará o jogo zerado de fábrica.`;
+            revealSection.classList.add('hidden');
+
+            // Substitui o comportamento do botão para deletar em vez de continuar
+            confirmBtn.innerHTML = `<i class="fa-solid fa-trash-can"></i> Sim, Apagar Tudo`;
+            confirmBtn.className = "flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-xl shadow transition-colors flex items-center justify-center gap-2";
+            
+            confirmBtn.onclick = () => {
+                wordsDatabase = [];
+                saveWordsToStorage();
+                updateAdminList();
+                setupNewGame();
+
+                // Fecha modal
+                modal.classList.add('opacity-0');
+                content.classList.remove('scale-100');
+                content.classList.add('scale-95');
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            };
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+                content.classList.add('scale-100');
+            }, 10);
+        }
+
+        // Teclado físico do computador
+        document.addEventListener('keydown', (event) => {
+            if (document.getElementById('tab-game').classList.contains('hidden')) return;
+            if (document.activeElement.tagName === 'INPUT') return;
+
+            const letter = event.key.toUpperCase();
+            if (/^[A-Z]$/.test(letter)) {
+                const keyboardButtons = document.querySelectorAll('#keyboard button');
+                keyboardButtons.forEach(btn => {
+                    if (btn.innerText === letter && !btn.disabled) {
+                        btn.click();
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
